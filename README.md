@@ -13,13 +13,19 @@ DeepInsight is a toolbox for the analysis and interpretation of wide-band neural
 import deepinsight
 
 # Load your electrophysiological or calcium-imaging data
-(raw_data, raw_timestamps, output, output_timestamps, info) = deepinsight.util.tetrode.read_tetrode_data(fp_raw_file)
+(raw_data,
+ raw_timestamps,
+ output,
+ output_timestamps,
+ info) = deepinsight.util.tetrode.read_tetrode_data(fp_raw_file)
 
 # Transform raw data to frequency domain
-deepinsight.preprocess.preprocess_input(fp_deepinsight, raw_data, sampling_rate=info['sampling_rate'], channels=info['channels'])
+deepinsight.preprocess.preprocess_input(fp_deepinsight, raw_data, sampling_rate=info['sampling_rate'],
+                                        channels=info['channels'])
 
 # Prepare outputs
-deepinsight.util.tetrode.preprocess_output(fp_deepinsight, raw_timestamps, output, output_timestamps, sampling_rate=info['sampling_rate'])
+deepinsight.util.tetrode.preprocess_output(fp_deepinsight, raw_timestamps, output, output_timestamps,
+                                           sampling_rate=info['sampling_rate'])
 
 # Train the model
 deepinsight.train.run_from_path(fp_deepinsight, loss_functions, loss_weights)
