@@ -1,0 +1,45 @@
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/CYHSM/DeepInsight/blob/master/LICENSE.md)
+![py36 status](https://img.shields.io/badge/python3.6-supported-green.svg)
+
+## DeepInsight: A general framework for interpreting wide-band neural activity
+
+DeepInsight is a toolbox for the analysis and interpretation of wide-band neural activity and can be applied on unsorted neural data. This means the traditional step of spike-sorting can be omitted and the raw data can be used directly as input, providing a more objective way of measuring decoding performance. 
+![Model Architecture](media/model_architecture.png)
+
+
+
+## Example Usage
+```python
+import deepinsight
+
+# Load your electrophysiological or calcium-imaging data
+(raw_data, raw_timestamps, output, output_timestamps, info) = deepinsight.util.tetrode.read_tetrode_data(fp_raw_file)
+
+# Transform raw data to frequency domain
+deepinsight.preprocess.preprocess_input(fp_deepinsight, raw_data, sampling_rate=info['sampling_rate'], channels=info['channels'])
+
+# Prepare outputs
+deepinsight.util.tetrode.preprocess_output(fp_deepinsight, raw_timestamps, output, output_timestamps, sampling_rate=info['sampling_rate'])
+
+# Train the model
+deepinsight.train.run_from_path(fp_deepinsight, loss_functions, loss_weights)
+
+# Get loss and shuffled loss for influence plot
+losses, output_predictions, indices = deepinsight.analyse.get_model_loss(fp_deepinsight, stepsize=10)
+shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(fp_deepinsight, axis=1, stepsize=10)
+
+# Plot influence across behaviours
+deepinsight.visualize.plot_residuals(fp_deepinsight, frequency_spacing=2)
+```
+
+See also the [jupyter notebook](notebooks/deepinsight_example_usage.ipynb) for a full example for decoding behaviours from tetrode CA1 recordings. 
+
+Following Video shows the performance of the model trained on position (left), head direction (top right) and speed (bottom right):
+![Model Performance](media/decoding_error.gif)
+
+## Installation
+For now install DeepInsight with the following command:
+```
+pip install -e git+https://github.com/CYHSM/DeepInsight.git
+```
+A full pip installation and Colab integration will be available soon.

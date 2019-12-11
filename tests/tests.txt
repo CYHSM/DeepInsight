@@ -1,0 +1,19 @@
+Where are the tests?
+
+...
+
+Should have written your unit-tests while coding it!
+
+...
+
+Yep
+
+...
+
+And now?
+
+...
+
+Chaos and revolts, cities will collapse and empires will fall. 
+
+The whole world will burn because you forgot to write unit tests! 
