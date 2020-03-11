@@ -8,8 +8,8 @@ import time
 from joblib import Parallel, delayed
 import numpy as np
 import h5py
-
 import deepinsight.util.wavelet_transform as wt
+from deepinsight.util import hdf5
 
 
 def preprocess_input(fp_hdf_out, raw_data, average_window=1000, channels=None, window_size=100000,
@@ -130,3 +130,44 @@ def preprocess_chunk(raw_chunk, subtract_mean=True, convert_to_milivolt=False):
     if convert_to_milivolt:
         raw_chunk = raw_chunk * (0.195 / 1000)
     return raw_chunk
+
+
+def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, average_window=1000):
+    """
+    Base file for preprocessing outputs (handles M-D case as of March2020).
+    For more complex cases use specialized functions (see for example preprocess_output in util.tetrode module)
+
+    Parameters
+    ----------
+    fp_hdf_out : str
+        File path to HDF5 file
+    raw_timestamps : (N,1) array_like
+        Timestamps for each sample in continous
+    output : array_like
+        M dimensional output which will be aligned with continous
+    output_timestamps : (N,1) array_like
+        Timestamps for output
+    average_window : int, optional
+        Downsampling factor for raw data and output, by default 1000
+    sampling_rate : int, optional
+        Sampling rate of raw ephys, by default 30000
+    """
+    hdf5_file = h5py.File(fp_hdf_out, mode='a')
+
+    # Get size of wavelets
+    input_length = hdf5_file['inputs/wavelets'].shape[0]
+
+    # Get positions of both LEDs
+    raw_timestamps = raw_timestamps[()]  # Slightly faster than np.array
+    if output.ndim == 1:
+        output = output[..., np.newaxis]
+
+    output_aligned = np.array([np.interp(raw_timestamps[np.arange(0, raw_timestamps.shape[0],
+                                                                  average_window)], output_timestamps, output[:, i]) for i in range(output.shape[1])]).transpose()
+    print(output_aligned.shape)
+
+    # Create and save datasets in HDF5 File
+    hdf5.create_or_update(hdf5_file, dataset_name="outputs/output_aligned",
+                          dataset_shape=[input_length, output_aligned.shape[1]], dataset_type=np.float16, dataset_value=output_aligned[0: input_length, ...])
+    hdf5_file.flush()
+    hdf5_file.close()

@@ -12,4 +12,3 @@ ipympl==0.2.1
 ipython==7.4.0
 ipython-genutils==0.2.0
 ipywidgets==7.4.2
-wavelets @ git+https://github.com/aaren/wavelets@a213d7c307e0a6b5a40cc648d4e3f69c2e77c12b#egg=wavelets
