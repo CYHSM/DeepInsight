@@ -8,10 +8,10 @@ import os
 import numpy as np
 import h5py
 
-from keras import optimizers
-from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 
 from . import architecture
 from . import util

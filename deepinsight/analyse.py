@@ -6,7 +6,7 @@ Licensed under MIT License
 """
 import os
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 import numpy as np
 import h5py
 

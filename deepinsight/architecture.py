@@ -4,9 +4,9 @@ DeepInsight Toolbox
 https://github.com/CYHSM/DeepInsight
 Licensed under MIT License
 """
-from keras.layers import Conv2D, GaussianNoise, TimeDistributed, Input, Dense, Lambda, Flatten, Dropout
-from keras.models import Model
-import keras.backend as K
+from tensorflow.keras.layers import Conv2D, GaussianNoise, TimeDistributed, Input, Dense, Lambda, Flatten, Dropout
+from tensorflow.keras.models import Model
+import tensorflow.keras.backend as K
 
 
 def the_decoder(tg, show_summary=True):
