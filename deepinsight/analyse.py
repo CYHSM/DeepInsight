@@ -4,13 +4,14 @@ DeepInsight Toolbox
 https://github.com/CYHSM/DeepInsight
 Licensed under MIT License
 """
+from . import util
+import h5py
+import numpy as np
+from tensorflow.compat.v1.keras import backend as K
 import os
 
-import tensorflow.keras.backend as K
-import numpy as np
-import h5py
-
-from . import util
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 
 def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None):
@@ -180,10 +181,10 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
     # 2.) Get output tensors
     sess = K.get_session()
     (_, test_out) = tg.__getitem__(0)
-    real_tensor, calc_tensors = K.placeholder(), []
+    real_tensor, calc_tensors = K.placeholder(shape=(None, 4, 1)), []
     for output_index in range(0, len(test_out)):
         prediction_tensor = model.outputs[output_index]
-        loss_tensor = model.loss_functions[output_index](real_tensor, prediction_tensor)
+        loss_tensor = model.loss_functions[output_index].fn(real_tensor, prediction_tensor)
         calc_tensors.append((prediction_tensor, loss_tensor))
 
     # 3.) Predict
