@@ -8,6 +8,7 @@ import time
 from joblib import Parallel, delayed
 import numpy as np
 import h5py
+import tensorflow as tf  # Progress bar only
 import deepinsight.util.wavelet_transform as wt
 from deepinsight.util import hdf5
 
@@ -44,35 +45,38 @@ def preprocess_input(fp_hdf_out, raw_data, average_window=1000, channels=None, w
         channels = np.arange(0, raw_data.shape[1])
     num_points = raw_data.shape[0]
     num_chunks = (num_points // gap_size) - 1
-    (_, wavelet_frequencies) = wt.wavelet_transform(np.ones(window_size), sampling_rate, average_window, scaling_factor)
+    (_, wavelet_frequencies) = wt.wavelet_transform(
+        np.ones(window_size), sampling_rate, average_window, scaling_factor)
     num_fourier_frequencies = len(wavelet_frequencies)
 
     # Prepare output file
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
     hdf5_file.create_dataset("inputs/wavelets", [((num_chunks + 1) * gap_size) //
                                                  average_window, num_fourier_frequencies, len(channels)], np.float32)
-    hdf5_file.create_dataset("inputs/fourier_frequencies", [num_fourier_frequencies], np.float16)
+    hdf5_file.create_dataset("inputs/fourier_frequencies",
+                             [num_fourier_frequencies], np.float16)
 
     # Prepare par pool
     par = Parallel(n_jobs=num_cores, verbose=0)
 
     # Start parallel wavelet transformation
-    print('Number of chunks {}'.format(num_chunks))
+    print('Starting wavelet transformation (n={}, chunks={}, frequencies={})'.format(
+        num_points, num_chunks, num_fourier_frequencies))
+    progress_bar = tf.keras.utils.Progbar(
+        num_chunks, width=30, verbose=1, interval=0.05, unit_name='chunk')
     for c in range(0, num_chunks):
-        t_chunk = time.time()
-        print('Starting chunk {}'.format(c))
-
         # Cut ephys
         start = gap_size * c
         end = start + window_size
-        print('Start {} - End {}'.format(start, end))
         raw_chunk = raw_data[start: end, channels]
 
         # Process raw chunk
-        raw_chunk = preprocess_chunk(raw_chunk, subtract_mean=True, convert_to_milivolt=False)
+        raw_chunk = preprocess_chunk(
+            raw_chunk, subtract_mean=True, convert_to_milivolt=False)
 
         # Calculate wavelet transform
-        wavelet_transformed = np.zeros((raw_chunk.shape[0] // average_window, num_fourier_frequencies, len(channels)))
+        wavelet_transformed = np.zeros(
+            (raw_chunk.shape[0] // average_window, num_fourier_frequencies, len(channels)))
         for ind, (wavelet_power, wavelet_frequencies) in enumerate(par(delayed(wt.wavelet_transform)(raw_chunk[:, i], sampling_rate, average_window, scaling_factor) for i in range(0, len(channels)))):
             wavelet_transformed[:, :, ind] = wavelet_power
 
@@ -88,7 +92,8 @@ def preprocess_input(fp_hdf_out, raw_data, average_window=1000, channels=None, w
         elif c == num_chunks - 1:  # Make sure the last one fits fully
             this_index_start = wavelet_index_start + index_gap
             this_index_end = wavelet_index_end
-            hdf5_file["inputs/wavelets"][this_index_start:this_index_end, :, :] = wavelet_transformed[index_gap::, :, :]
+            hdf5_file["inputs/wavelets"][this_index_start:this_index_end,
+                                         :, :] = wavelet_transformed[index_gap::, :, :]
 
         else:
             this_index_start = wavelet_index_start + index_gap
@@ -96,7 +101,7 @@ def preprocess_input(fp_hdf_out, raw_data, average_window=1000, channels=None, w
             hdf5_file["inputs/wavelets"][this_index_start:this_index_end,
                                          :, :] = wavelet_transformed[index_gap: -index_gap, :, :]
         hdf5_file.flush()
-        print('This chunk time {}'.format(time.time() - t_chunk))
+        progress_bar.add(1)
 
     # 7.) Put frequencies in and close file
     hdf5_file["inputs/fourier_frequencies"][:] = wavelet_frequencies
@@ -164,7 +169,6 @@ def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, ave
 
     output_aligned = np.array([np.interp(raw_timestamps[np.arange(0, raw_timestamps.shape[0],
                                                                   average_window)], output_timestamps, output[:, i]) for i in range(output.shape[1])]).transpose()
-    print(output_aligned.shape)
 
     # Create and save datasets in HDF5 File
     hdf5.create_or_update(hdf5_file, dataset_name="outputs/output_aligned",

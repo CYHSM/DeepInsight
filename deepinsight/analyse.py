@@ -14,7 +14,7 @@ import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
 
-def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None):
+def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, verbose=1):
     """
     Loops across cross validated models and calculates loss and predictions for full experiment length
 
@@ -40,24 +40,30 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None):
     dirname = os.path.dirname(fp_hdf_out)
     filename = os.path.basename(fp_hdf_out)[0:-3]
     cv_results = []
-    (_, _, _, opts) = util.hdf5.load_model_with_opts(dirname + '/models/' + filename + '_model_{}.h5'.format(0))
+    (_, _, _, opts) = util.hdf5.load_model_with_opts(
+        dirname + '/models/' + filename + '_model_{}.h5'.format(0))
     loss_names = opts['loss_names']
     time_shift = opts['model_timesteps']
+    if verbose > 0:
+        progress_bar = tf.keras.utils.Progbar(
+            opts['num_cvs'], width=30, verbose=1, interval=0.05, unit_name='run')
     for k in range(0, opts['num_cvs']):
         K.clear_session()
         # Find folders
         model_path = dirname + '/models/' + filename + '_model_{}.h5'.format(k)
         # Load model and generators
-        print('This model {}'.format(model_path))
-        (model, training_generator, testing_generator, opts) = util.hdf5.load_model_with_opts(model_path)
+        (model, training_generator, testing_generator,
+         opts) = util.hdf5.load_model_with_opts(model_path)
         # -----------------------------------------------------------------------------------------------
-        print('Getting loss, predictions and saliencies')
         if shuffles is not None:
-            testing_generator = shuffle_wavelets(training_generator, testing_generator, shuffles)
+            testing_generator = shuffle_wavelets(
+                training_generator, testing_generator, shuffles)
         losses, predictions, indices = calculate_losses_from_generator(
-            testing_generator, model, verbose=1, stepsize=stepsize)
+            testing_generator, model, verbose=0, stepsize=stepsize)
         # -----------------------------------------------------------------------------------------------
         cv_results.append((losses, predictions, indices))
+        if verbose > 0:
+            progress_bar.add(1)
     cv_results = np.array(cv_results)
     # Reshape cv_results
     losses = np.concatenate(cv_results[:, 0], axis=0)
@@ -97,7 +103,7 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None):
     return losses, predictions, indices
 
 
-def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0):
+def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
     """
     Shuffles the wavelets and recalculates error
 
@@ -117,17 +123,25 @@ def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0):
         Loss between predicted and ground truth observation for shuffled wavelets on specified axis
     """
     if axis == 0:
-        raise ValueError('Shuffling across time dimension (axis=0) not supported yet.')
+        raise ValueError(
+            'Shuffling across time dimension (axis=0) not supported yet.')
     hdf5_file = h5py.File(fp_hdf_out, mode='r')
     tmp_wavelets_shape = hdf5_file['inputs/wavelets'].shape
     hdf5_file.close()
     shuffled_losses = []
+    if verbose > 0:
+        progress_bar = tf.keras.utils.Progbar(
+            tmp_wavelets_shape[axis], width=30, verbose=1, interval=0.05, unit_name='run')
     for s in range(0, tmp_wavelets_shape[axis]):
         if axis == 1:
-            losses, _, _ = get_model_loss(fp_hdf_out, stepsize=stepsize, shuffles={'f': s})
+            losses, _, _ = get_model_loss(
+                fp_hdf_out, stepsize=stepsize, shuffles={'f': s}, verbose=0)
         elif axis == 2:
-            losses, _, _ = get_model_loss(fp_hdf_out, stepsize=stepsize, shuffles={'c': s})
+            losses, _, _ = get_model_loss(
+                fp_hdf_out, stepsize=stepsize, shuffles={'c': s}, verbose=0)
         shuffled_losses.append(losses)
+        if verbose > 0:
+            progress_bar.add(1)
     shuffled_losses = np.array(shuffled_losses)
     # Also save to HDF5
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
@@ -181,10 +195,11 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
     # 2.) Get output tensors
     sess = K.get_session()
     (_, test_out) = tg.__getitem__(0)
-    real_tensor, calc_tensors = K.placeholder(shape=(None, 4, 1)), []
+    real_tensor, calc_tensors = K.placeholder(), []
     for output_index in range(0, len(test_out)):
         prediction_tensor = model.outputs[output_index]
-        loss_tensor = model.loss_functions[output_index].fn(real_tensor, prediction_tensor)
+        loss_tensor = model.loss_functions[output_index].fn(
+            real_tensor, prediction_tensor)
         calc_tensors.append((prediction_tensor, loss_tensor))
 
     # 3.) Predict
@@ -194,7 +209,8 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
         indices.append(tg.cv_indices[i])
         loss, prediction = [], []
         for o in range(0, len(out_tg)):
-            evaluated = sess.run(calc_tensors[o], feed_dict={model.input: in_tg, real_tensor: out_tg[o]})
+            evaluated = sess.run(calc_tensors[o], feed_dict={
+                                 model.input: in_tg, real_tensor: out_tg[o]})
             prediction.append(evaluated[0][0, ...])
             loss.append(evaluated[1][0, ...])  # Get rid of batch dimensions
         predictions.append(prediction)
@@ -203,7 +219,8 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
             print('{} / {}'.format(i, num_steps), end='\r')
     if verbose > 0:
         print('Performed {} gradient steps'.format(num_steps // stepsize))
-    losses, predictions, indices = np.array(losses), swap_listaxes(predictions), np.array(indices)
+    losses, predictions, indices = np.array(
+        losses), swap_listaxes(predictions), np.array(indices)
     tg.__dict__.update(tmp_dict)
 
     return losses, predictions, indices
