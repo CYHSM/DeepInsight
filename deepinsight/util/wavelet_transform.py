@@ -81,7 +81,6 @@ def simple_wavelet_transform(signal, sampling_rate, scaling_factor=0.25, wave_lo
 
     if wave_lowpass or wave_highpass:
         wavelet_power = wavelet_power[(wavelet_frequencies < wave_lowpass) & (wavelet_frequencies > wave_highpass), :]
-        wavelet_frequencies = wavelet_frequencies[(
-            wavelet_frequencies < wave_lowpass) & (wavelet_frequencies > wave_highpass)]
+        wavelet_frequencies = wavelet_frequencies[(wavelet_frequencies < wave_lowpass) & (wavelet_frequencies > wave_highpass)]
 
     return (wavelet_power, wavelet_frequencies, wavelet_obj)
