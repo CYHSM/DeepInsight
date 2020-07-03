@@ -48,4 +48,8 @@ For now install DeepInsight with the following command:
 ```
 pip install -e git+https://github.com/CYHSM/DeepInsight.git#egg=DeepInsight
 ```
-A full pip installation and Colab integration will be available soon.
+If you prefer to use DeepInsight from within your browser, we provide Colab-Notebooks to guide you through how to use DeepInsight with your own data. 
+
+- How to use DeepInsight with two-photon calcium imaging data [![Two-Photon Imaging](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11RXK7JIgVM8Zy9M7xEtt1k62i3JXbZLU)
+
+- How to use DeepInsight with electrophysiology data [![Ephys Data](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1h3RYr3r0Zs2k6I53bTiYRq_6VQo38iMP)
