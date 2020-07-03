@@ -7,7 +7,7 @@ Licensed under MIT License
 import pickle
 import os
 import numpy as np
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 from . import hdf5
 

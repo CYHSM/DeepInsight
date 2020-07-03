@@ -7,6 +7,7 @@ logs*
 *.mp4
 /data
 .vscode
+*.mat
 
 # Distribution / packaging
 .Python

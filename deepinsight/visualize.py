@@ -37,7 +37,10 @@ def plot_residuals(fp_hdf_out, output_names, aggregator=np.mean, frequency_spaci
 
     # Plot
     fig, axes = plt.subplots(1, len(output_names), figsize=(16, 5))
-    axes = axes.flatten()
+    if len(output_names) > 1:
+        axes = axes.flatten()
+    else:
+        axes = [axes]
     for all_residuals, ax, on in zip(residuals.transpose(), axes, output_names):
         residuals_mean = np.mean(all_residuals, axis=0)
         all_residuals = all_residuals / np.sum(residuals_mean)

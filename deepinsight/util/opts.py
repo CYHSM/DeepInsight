@@ -60,5 +60,7 @@ def get_opts(fp_hdf_out, train_test_times):
     # -------- MISC--------------- ------------
     opts['tensorboard_logfolder'] = './'
     opts['model_folder'] = './'
+    opts['log_output'] = False
+    opts['save_model'] = False
 
     return opts

@@ -8,10 +8,10 @@ import os
 import numpy as np
 import h5py
 
-from keras import optimizers
-from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 
 from . import architecture
 from . import util
@@ -103,7 +103,7 @@ def train_model_on_generator(model, training_generator, testing_generator, loss_
     return (model, history)
 
 
-def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, num_cvs=5):
+def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts, num_cvs=5):
     """
     Trains the model across the experiment using cross validation and saves the model files
     TODO Save models back to HDF5 to keep everything in one place
@@ -122,6 +122,8 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
         For each output the corresponding loss function
     loss_weights : dict
         For each output the corresponding weight
+    user_opts : dict
+        Model parameters in case default opts should be changed
     num_cvs : int, optional
         Number of cross validation splits, by default 5
     """
@@ -142,15 +144,19 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
         opts['loss_weights'] = loss_weights
         opts['loss_names'] = list(loss_functions.keys())
         opts['num_cvs'] = num_cvs
+        # check for user options
+        if user_opts is not None:
+            for key, value in user_opts.items():
+                opts[key] = value
         (training_generator, testing_generator) = util.data_generator.create_train_and_test_generators(opts)
-        model = get_model_from_function(training_generator, show_summary=True)
+        model = get_model_from_function(training_generator, show_summary=False)
 
         print('------------------------------------------------')
         print('-> Model and generators loaded')
         print('------------------------------------------------')
 
-        (model, history) = train_model_on_generator(model, training_generator, testing_generator, loss_functions=loss_functions.copy(), loss_weights=loss_weights, reduce_lr=True, log_output=True,
-                                                    tensorboard_logfolder=tensorboard_logfolder, model_name=model_tmp_path, save_model_only=True,
+        (model, history) = train_model_on_generator(model, training_generator, testing_generator, loss_functions=loss_functions.copy(), loss_weights=loss_weights, reduce_lr=True,
+                                                    log_output=opts['log_output'], tensorboard_logfolder=tensorboard_logfolder, model_name=model_tmp_path, save_model_only=opts['save_model'],
                                                     steps_per_epoch=opts['steps_per_epoch'], validation_steps=opts['validation_steps'], epochs=opts['epochs'])
         # Save model and history
         if history:
@@ -163,7 +169,7 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
     hdf5_file.close()
 
 
-def run_from_path(path_in, loss_functions, loss_weights):
+def run_from_path(path_in, loss_functions, loss_weights, user_opts=None):
     """
     Runs model training giving path to HDF5 file and loss dictionaries
 
@@ -194,7 +200,7 @@ def run_from_path(path_in, loss_functions, loss_weights):
     print('------------------------------------------------')
     print('Starting standard model')
     print('------------------------------------------------')
-    train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights)
+    train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts)
 
 
 def get_model_from_function(training_generator, show_summary=True):
