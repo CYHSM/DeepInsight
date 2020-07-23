@@ -14,7 +14,7 @@ import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
 
-def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, verbose=1):
+def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
     """
     Loops across cross validated models and calculates loss and predictions for full experiment length
 
@@ -92,11 +92,11 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, verbose=1):
     # Also save to HDF5
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
     for key, item in predictions.items():
-        util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/predictions/{}".format(key),
+        util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/predictions/{}_axis{}_stepsize{}".format(key, axis, stepsize),
                                    dataset_shape=item.shape, dataset_type=np.float32, dataset_value=item)
-    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/losses",
+    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/losses_axis{}_stepsize{}".format(axis, stepsize),
                                dataset_shape=losses.shape, dataset_type=np.float32, dataset_value=losses)
-    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/indices",
+    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/indices_axis{}_stepsize{}".format(axis, stepsize),
                                dataset_shape=indices.shape, dataset_type=np.int64, dataset_value=indices)
     hdf5_file.close()
 
@@ -135,10 +135,10 @@ def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
     for s in range(0, tmp_wavelets_shape[axis]):
         if axis == 1:
             losses, _, _ = get_model_loss(
-                fp_hdf_out, stepsize=stepsize, shuffles={'f': s}, verbose=0)
+                fp_hdf_out, stepsize=stepsize, shuffles={'f': s}, axis=axis, verbose=0)
         elif axis == 2:
             losses, _, _ = get_model_loss(
-                fp_hdf_out, stepsize=stepsize, shuffles={'c': s}, verbose=0)
+                fp_hdf_out, stepsize=stepsize, shuffles={'c': s}, axis=axis, verbose=0)
         shuffled_losses.append(losses)
         if verbose > 0:
             progress_bar.add(1)
