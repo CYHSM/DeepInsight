@@ -145,7 +145,7 @@ def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
     shuffled_losses = np.array(shuffled_losses)
     # Also save to HDF5
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
-    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/influence/shuffled_losses",
+    util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/influence/shuffled_losses_axis{}_stepsize{}".format(axis, stepsize),
                                dataset_shape=shuffled_losses.shape, dataset_type=np.float32, dataset_value=shuffled_losses)
     hdf5_file.close()
 
