@@ -6,9 +6,14 @@
 DeepInsight is a toolbox for the analysis and interpretation of wide-band neural activity and can be applied on unsorted neural data. This means the traditional step of spike-sorting can be omitted and the raw data can be used directly as input, providing a more objective way of measuring decoding performance. 
 ![Model Architecture](media/model_architecture.png)
 
+## Example Usage with Google Colaboratory
 
+We created a Colab notebook to showcase how to analyse your own two-photon calcium imaging data. We provide the raw as well as the preprocessed dataset as downloads if you just want to train the model. You can replace the code which loads the traces with your own data handling and directly train it to decode your behaviour or stimuli in the browser. 
 
-## Example Usage
+[![Two-Photon Imaging](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11RXK7JIgVM8Zy9M7xEtt1k62i3JXbZLU)  
+![Colab Walkthrough](media/colab_walkthrough.gif)
+
+## Example Usage with python script
 ```python
 import deepinsight
 
