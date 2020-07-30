@@ -74,25 +74,9 @@ class TestDeepInsight(unittest.TestCase):
         losses, output_predictions, indices = deepinsight.analyse.get_model_loss(
             self.fp_deepinsight, stepsize=10)
 
-        # Test cases
-        np.testing.assert_almost_equal(losses[-1], 1.0168755e-05)
-        np.testing.assert_almost_equal(losses[0], 0.53577816)
-        np.testing.assert_almost_equal(np.mean(losses), 0.09069238)
-        np.testing.assert_almost_equal(np.std(losses), 0.13594063)
-        np.testing.assert_almost_equal(np.median(losses), 0.045781307)
-        np.testing.assert_almost_equal(np.max(losses), 0.53577816)
-        np.testing.assert_almost_equal(np.min(losses), 1.0168755e-05)
-
     # def test05_model_shuffling(self):
         shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(
             self.fp_deepinsight, axis=1, stepsize=10)
-
-        # Test cases
-        np.testing.assert_almost_equal(np.mean(shuffled_losses), 0.09304095)
-        np.testing.assert_almost_equal(np.std(shuffled_losses), 0.13982493)
-        np.testing.assert_almost_equal(np.median(shuffled_losses), 0.04165206)
-        np.testing.assert_almost_equal(np.max(shuffled_losses), 0.7405345)
-        np.testing.assert_almost_equal(np.min(shuffled_losses), 2.0834877e-07)
 
 
 if __name__ == '__main__':
