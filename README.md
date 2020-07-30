@@ -1,5 +1,6 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/CYHSM/DeepInsight/blob/master/LICENSE.md)
 ![py36 status](https://img.shields.io/badge/python3.6-supported-green.svg)
+![Build Status](https://github.com/CYHSM/DeepInsight/workflows/build/badge.svg)
 
 ## DeepInsight: A general framework for interpreting wide-band neural activity
 
