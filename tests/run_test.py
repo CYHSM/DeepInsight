@@ -21,7 +21,7 @@ class TestDeepInsight(unittest.TestCase):
         if os.path.exists(self.fp_deepinsight):
             os.remove(self.fp_deepinsight)
         else:
-            self.fp_deepinsight.mkdir(parents=True, exist_ok=True)
+            os.mkdir(self.fp_deepinsight, parents=True, exist_ok=True)
         self.input_length = int(3e5)
         self.input_channels = 5
         self.sampling_rate = 30000
