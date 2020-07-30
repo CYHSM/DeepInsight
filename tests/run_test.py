@@ -18,7 +18,7 @@ class TestDeepInsight(unittest.TestCase):
         unittest.TestCase.setUp(self)
         np.random.seed(0)
         self.fp_deepinsight_folder = os.getcwd() + '/tests/test_files/'
-        self.fp_deepinsight = fp_deepinsight_folder + 'test.h5'
+        self.fp_deepinsight = self.fp_deepinsight_folder + 'test.h5'
         if os.path.exists(self.fp_deepinsight):
             os.remove(self.fp_deepinsight)
         else:
