@@ -54,22 +54,22 @@ class TestDeepInsight(unittest.TestCase):
         np.testing.assert_almost_equal(np.min(input_wavelets), 1.6544704e-05)
         hdf5_file.close()
 
-    #def test02_preprocessing(self):
+    # def test02_preprocessing(self):
         # Prepare outputs
         deepinsight.preprocess.preprocess_output(
             self.fp_deepinsight, self.rand_input_timesteps, self.rand_output, self.rand_timesteps)
 
-    #def test03_model_training(self):
+    # def test03_model_training(self):
         # Define loss functions and train model
-        loss_functions = {'output_aligned': 'mse'}
-        loss_weights = {'output_aligned': 1}
+        loss_functions = {'aligned': 'mse'}
+        loss_weights = {'aligned': 1}
         user_opts = {'epochs': 2, 'steps_per_epoch': 10,
                      'validation_steps': 10, 'log_output': False, 'save_model': True}
 
         deepinsight.train.run_from_path(
             self.fp_deepinsight, loss_functions, loss_weights, user_opts)
 
-    #def test04_model_performance(self):
+    # def test04_model_performance(self):
         # Get loss and shuffled loss for influence plot, both is also stored back to HDF5 file
         losses, output_predictions, indices = deepinsight.analyse.get_model_loss(
             self.fp_deepinsight, stepsize=10)
@@ -83,7 +83,7 @@ class TestDeepInsight(unittest.TestCase):
         np.testing.assert_almost_equal(np.max(losses), 0.53577816)
         np.testing.assert_almost_equal(np.min(losses), 1.0168755e-05)
 
-    #def test05_model_shuffling(self):
+    # def test05_model_shuffling(self):
         shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(
             self.fp_deepinsight, axis=1, stepsize=10)
 
