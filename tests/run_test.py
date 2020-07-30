@@ -17,13 +17,11 @@ class TestDeepInsight(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
         np.random.seed(0)
-        self.fp_deepinsight = './tests/test_files/test.h5'
+        self.fp_deepinsight = os.getcwd() + '/tests/test_files/test.h5'
         if os.path.exists(self.fp_deepinsight):
             os.remove(self.fp_deepinsight)
         else:
-            hdf5_file = h5py.File('/home/runner/work/DeepInsight/DeepInsight/test.h5', mode='w')
-            hdf5_file.close()
-
+            os.makedirs(self.fp_deepinsight)
         self.input_length = int(3e5)
         self.input_channels = 5
         self.sampling_rate = 30000
