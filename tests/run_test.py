@@ -21,7 +21,7 @@ class TestDeepInsight(unittest.TestCase):
         if os.path.exists(self.fp_deepinsight):
             os.remove(self.fp_deepinsight)
         else:
-            hdf5_file = h5py.File(self.fp_deepinsight, mode='w')
+            hdf5_file = h5py.File('/home/runner/work/DeepInsight/DeepInsight/test.h5', mode='w')
             hdf5_file.close()
 
         self.input_length = int(3e5)
