@@ -36,7 +36,7 @@ class TestDeepInsight(unittest.TestCase):
         self.rand_timesteps = np.arange(
             0, self.input_length, self.input_output_ratio)
 
-    def test01_input_output(self):
+    def test_fullrun(self):
         """
         Tests wavelet transformation of random signal
         """
@@ -54,12 +54,10 @@ class TestDeepInsight(unittest.TestCase):
         np.testing.assert_almost_equal(np.min(input_wavelets), 1.6544704e-05)
         hdf5_file.close()
 
-    # def test02_preprocessing(self):
         # Prepare outputs
         deepinsight.preprocess.preprocess_output(
             self.fp_deepinsight, self.rand_input_timesteps, self.rand_output, self.rand_timesteps)
 
-    # def test03_model_training(self):
         # Define loss functions and train model
         loss_functions = {'aligned': 'mse'}
         loss_weights = {'aligned': 1}
@@ -69,12 +67,10 @@ class TestDeepInsight(unittest.TestCase):
         deepinsight.train.run_from_path(
             self.fp_deepinsight, loss_functions, loss_weights, user_opts)
 
-    # def test04_model_performance(self):
         # Get loss and shuffled loss for influence plot, both is also stored back to HDF5 file
         losses, output_predictions, indices = deepinsight.analyse.get_model_loss(
             self.fp_deepinsight, stepsize=10)
 
-    # def test05_model_shuffling(self):
         shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(
             self.fp_deepinsight, axis=1, stepsize=10)
 
