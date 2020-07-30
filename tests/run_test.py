@@ -21,7 +21,8 @@ class TestDeepInsight(unittest.TestCase):
         if os.path.exists(self.fp_deepinsight):
             os.remove(self.fp_deepinsight)
         else:
-            os.mkdir(self.fp_deepinsight, parents=True, exist_ok=True)
+            hdf5_file = h5py.File(self.fp_deepinsight, mode='w')
+            hdf5_file.close()
         self.input_length = int(3e5)
         self.input_channels = 5
         self.sampling_rate = 30000
