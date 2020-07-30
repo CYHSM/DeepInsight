@@ -12,7 +12,7 @@ class TestDeepInsight(unittest.TestCase):
     """Simple Testing Class"""
 
     def tearDown(self):
-        time.sleep(1)
+        time.sleep(0.1)
 
     def setUp(self):
         unittest.TestCase.setUp(self)
