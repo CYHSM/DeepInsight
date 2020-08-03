@@ -2,19 +2,19 @@
 ![py36 status](https://img.shields.io/badge/python3.6-supported-green.svg)
 ![Build Status](https://github.com/CYHSM/DeepInsight/workflows/build/badge.svg)
 
-## DeepInsight: A general framework for interpreting wide-band neural activity
+# DeepInsight: A general framework for interpreting wide-band neural activity
 
 DeepInsight is a toolbox for the analysis and interpretation of wide-band neural activity and can be applied on unsorted neural data. This means the traditional step of spike-sorting can be omitted and the raw data can be used directly as input, providing a more objective way of measuring decoding performance. 
 ![Model Architecture](media/model_architecture.png)
 
-## Example Usage with Google Colaboratory
+## Google Colaboratory
 
 We created a Colab notebook to showcase how to analyse your own two-photon calcium imaging data. We provide the raw as well as the preprocessed dataset as downloads if you just want to train the model. You can replace the code which loads the traces with your own data handling and directly train it to decode your behaviour or stimuli in the browser. 
 
 [![Two-Photon Imaging](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11RXK7JIgVM8Zy9M7xEtt1k62i3JXbZLU)  
 ![Colab Walkthrough](media/colab_walkthrough.gif)
 
-## Example Usage with python script
+## Example Usage
 ```python
 import deepinsight
 
@@ -44,13 +44,13 @@ shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(fp_deepinsight, ax
 deepinsight.visualize.plot_residuals(fp_deepinsight, frequency_spacing=2)
 ```
 
-See also the [jupyter notebook](notebooks/deepinsight_example_usage.ipynb) for a full example for decoding behaviours from tetrode CA1 recordings. 
+See also the [jupyter notebook](notebooks/static/ephys_example.ipynb) for a full example for decoding behaviours from tetrode CA1 recordings. Note that the static notebook does not include interactive plots as shown in the above Colab notebook. The expected run time for a high sampling rate dataset (e.g. tetrode recordings) is highly dependend on the number of channels and duration of experiment. Preprocessing can take up to one day for a 128 channel - 1 hour experiment, while training the model takes between 6 and 12 hours. For calcium recordings the preprocessing time is shrunk down to minutes. 
 
 Following Video shows the performance of the model trained on position (left), head direction (top right) and speed (bottom right):
 ![Model Performance](media/decoding_error.gif)
 
 ## Installation
-For now install DeepInsight with the following command:
+Install DeepInsight with the following command (Installation time ~ 2 minutes, depending on internet speed):
 ```
 pip install -e git+https://github.com/CYHSM/DeepInsight.git#egg=DeepInsight
 ```
@@ -59,3 +59,23 @@ If you prefer to use DeepInsight from within your browser, we provide Colab-Note
 - How to use DeepInsight with two-photon calcium imaging data [![Two-Photon Imaging](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11RXK7JIgVM8Zy9M7xEtt1k62i3JXbZLU)
 
 - How to use DeepInsight with electrophysiology data [![Ephys Data](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1h3RYr3r0Zs2k6I53bTiYRq_6VQo38iMP)
+
+## System Requirements
+
+### Hardware requirements
+For preprocessing raw data with a high sampling rate it is recommended to at least use 4 parallel cores. For calcium recordings one core is enough. For training the model it is recommended to use a GPU with at least 6Gb of memory. 
+
+### Software requirements
+The following python dependencies are being automatically installed when installing DeepInsight (specified in requirements.txt):
+```
+tensorflow-gpu
+numpy
+pandas
+joblib
+seaborn
+matplotlib
+h5py
+scipy
+ipython
+```
+The framework is extensively tested on Linux 16.04 but should run on all OS (Windows, Mac, Linux) supporting a Python version >3.6 and pip. It is recommended to install the framework and dependencies in a virtual environment (e.g. conda).  
