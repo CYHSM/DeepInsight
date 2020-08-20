@@ -8,6 +8,7 @@ logs*
 /data
 .vscode
 *.mat
+*.html
 
 # Distribution / packaging
 .Python
