@@ -130,7 +130,7 @@ class RawWaveletSequence(Sequence):
 
             # 3.) Divide evenly and make sure last output is being decoded
             if self.average_output:
-                cut_data = cut_data[:, np.arange(0, cut_data.shape[1]+1, self.average_output)[1::]]
+                cut_data = cut_data[:, np.arange(0, cut_data.shape[1] + 1, self.average_output)[1::] - 1]
             out_sample.append(cut_data)
 
         return out_sample
