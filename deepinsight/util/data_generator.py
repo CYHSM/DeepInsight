@@ -128,10 +128,9 @@ class RawWaveletSequence(Sequence):
             if cut_data.shape[0] is not self.batch_size:
                 cut_data = np.reshape(cut_data, (self.batch_size, self.model_timesteps, cut_data.shape[1]))
 
-            # For output average timesteps together or take just last sample (average_over==-1)
+            # 3.) Divide evenly and make sure last output is being decoded
             if self.average_output:
-                # Divide evenly! Dont take average over positions
-                cut_data = cut_data[:, np.arange(0, cut_data.shape[1], self.average_output)]
+                cut_data = cut_data[:, np.arange(0, cut_data.shape[1]+1, self.average_output)[1::]]
             out_sample.append(cut_data)
 
         return out_sample
