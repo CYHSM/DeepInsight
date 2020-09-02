@@ -112,7 +112,7 @@ def read_hdf_memmapped(fn_hdf, hdf_group):
     """
     # Define function for memmapping
     def _mmap_h5(path, h5path):
-        with h5py.File(path) as f:
+        with h5py.File(path, mode='r') as f:
             ds = f[h5path]
             # We get the dataset address in the HDF5 fiel.
             offset = ds.id.get_offset()
