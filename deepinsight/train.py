@@ -91,8 +91,8 @@ def train_model_on_generator(model, training_generator, testing_generator, loss_
         callbacks.append(model_cp)
     # Run model training
     try:
-        history = model.fit_generator(training_generator, steps_per_epoch=steps_per_epoch, epochs=epochs, shuffle=training_generator.shuffle,
-                                      validation_steps=validation_steps, validation_data=testing_generator, verbose=verbose, callbacks=callbacks)
+        history = model.fit(training_generator, steps_per_epoch=steps_per_epoch, epochs=epochs, shuffle=training_generator.shuffle,
+                            validation_steps=validation_steps, validation_data=testing_generator, verbose=verbose, callbacks=callbacks)
     except KeyboardInterrupt:
         print('-> Notebook interrupted')
         history = []
