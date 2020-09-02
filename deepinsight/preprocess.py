@@ -60,10 +60,11 @@ def preprocess_input(fp_hdf_out, raw_data, average_window=1000, channels=None, w
     num_fourier_frequencies = len(wavelet_frequencies)
     # Prepare output file
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
-    hdf5_file.create_dataset("inputs/wavelets", [output_size, num_fourier_frequencies, len(channels)], np.float32)
+    if "inputs/wavelets" not in hdf5_file:
+        hdf5_file.create_dataset("inputs/wavelets", [output_size, num_fourier_frequencies, len(channels)], np.float32)
+        hdf5_file.create_dataset("inputs/fourier_frequencies", [num_fourier_frequencies], np.float16)
     # Makes saving 5 times faster as last index saving is fancy indexing and therefore slow
     hdf5_file.create_dataset("inputs/tmp_wavelets", [len(channels), output_size, num_fourier_frequencies], np.float32)
-    hdf5_file.create_dataset("inputs/fourier_frequencies", [num_fourier_frequencies], np.float16)
 
     # Prepare par pool
     par = Parallel(n_jobs=num_cores, verbose=0)
@@ -168,8 +169,8 @@ def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, ave
         Timestamps for output
     average_window : int, optional
         Downsampling factor for raw data and output, by default 1000
-    sampling_rate : int, optional
-        Sampling rate of raw ephys, by default 30000
+    dataset_name : str, optional
+        Field name for output stored in HDF5 file
     """
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
 
