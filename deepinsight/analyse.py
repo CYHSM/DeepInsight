@@ -7,6 +7,8 @@ Licensed under MIT License
 from . import util
 import h5py
 import numpy as np
+import pandas as pd
+from scipy.stats import spearmanr
 from tensorflow.compat.v1.keras import backend as K
 import os
 
@@ -100,7 +102,11 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
                                dataset_shape=indices.shape, dataset_type=np.int64, dataset_value=indices)
     hdf5_file.close()
 
-    return losses, predictions, indices
+    # Report model performance
+    if verbose > 0:
+        df_stats = calculate_model_stats(fp_hdf_out, losses, predictions, indices, verbose=verbose)
+
+    return losses, predictions, indices, df_stats
 
 
 def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
@@ -228,7 +234,7 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
 
 def shuffle_wavelets(training_generator, testing_generator, shuffles):
     """
-    [summary]
+    Shuffle procedure for model interpretation
 
     Parameters
     ----------
@@ -261,3 +267,28 @@ def swap_listaxes(list_in):
     for o in range(0, len(list_in[0])):
         list_out.append(np.array([out[o] for out in list_in]))
     return list_out
+
+
+def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_metrics=[spearmanr], verbose=0):
+    hdf5_file = h5py.File(fp_hdf_out, mode='r')
+    output_scores = []
+    for idx, (key, item) in enumerate(predictions.items()):
+        y_pred = item
+        y_true = hdf5_file['outputs/{}'.format(key)][indices, :]
+
+        pearson_mean, additional_mean = 0, np.zeros((len(additional_metrics)))
+        for p in range(y_pred.shape[1]):
+            pearson_mean += np.corrcoef(y_true[:, p], y_pred[:, p])[0, 1]
+            for add_idx, am in enumerate(additional_metrics):
+                am_eval = am(y_true[:, p], y_pred[:, p])
+                if len(am_eval) > 1:
+                    am_eval = am_eval[0]
+                additional_mean[add_idx] += am_eval
+        additional_mean /= y_pred.shape[1]
+        pearson_mean /= y_pred.shape[1]
+        loss_mean = np.mean(losses[:, idx])
+        output_scores.append((pearson_mean, loss_mean, *additional_mean))
+    additional_columns = [f.__name__.title() for f in additional_metrics]
+    df_scores = pd.DataFrame(output_scores, index=predictions.keys(), columns=['Pearson', 'Model Loss', *additional_columns])
+    hdf5_file.close()
+    return df_scores
