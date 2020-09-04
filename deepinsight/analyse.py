@@ -104,7 +104,7 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
 
     # Report model performance
     if verbose > 0:
-        df_stats = calculate_model_stats(fp_hdf_out, losses, predictions, indices, verbose=verbose)
+        df_stats = calculate_model_stats(fp_hdf_out, losses, predictions, indices)
         print(df_stats)
 
     return losses, predictions, indices
@@ -270,11 +270,31 @@ def swap_listaxes(list_in):
     return list_out
 
 
-def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_metrics=[spearmanr], verbose=0):
+def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_metrics=[spearmanr]):
+    """
+    Calculates statistics on model predictions
+
+    Parameters
+    ----------
+    fp_hdf_out : str
+        File path to HDF5 file
+    losses : (N,1) array_like
+        Loss between predicted and ground truth observation
+    predictions : dict
+        Dictionary with predictions for each behaviour, each item in dict has size (N, Z) with Z the dimensions of the sample (e.g. Z_position=2, Z_speed=1, ...)
+    indices : (N,1) array_like
+        Indices which were evaluated, important when taking stepsize unequal to 1
+    additional_metrics : list, optional
+        Additional metrics besides Pearson and Model loss to be evaluated, should take arguments (y_true, y_pred) and return scalar or first argument as metric
+
+    Returns
+    -------
+    df_scores
+        Dataframe of evaluated scores
+    """
     hdf5_file = h5py.File(fp_hdf_out, mode='r')
     output_scores = []
-    for idx, (key, item) in enumerate(predictions.items()):
-        y_pred = item
+    for idx, (key, y_pred) in enumerate(predictions.items()):
         y_true = hdf5_file['outputs/{}'.format(key)][indices, :]
 
         pearson_mean, additional_mean = 0, np.zeros((len(additional_metrics)))
