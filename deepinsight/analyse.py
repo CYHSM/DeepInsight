@@ -105,8 +105,9 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
     # Report model performance
     if verbose > 0:
         df_stats = calculate_model_stats(fp_hdf_out, losses, predictions, indices, verbose=verbose)
+        print(df_stats)
 
-    return losses, predictions, indices, df_stats
+    return losses, predictions, indices
 
 
 def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
@@ -291,4 +292,5 @@ def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_m
     additional_columns = [f.__name__.title() for f in additional_metrics]
     df_scores = pd.DataFrame(output_scores, index=predictions.keys(), columns=['Pearson', 'Model Loss', *additional_columns])
     hdf5_file.close()
+
     return df_scores
