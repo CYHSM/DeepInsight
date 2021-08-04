@@ -123,7 +123,7 @@ def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, ave
 
     # Clean raw_positions and get centre
     positions_smooth = pd.DataFrame(raw_positions.copy()).interpolate(
-        limit_direction='both').rolling(5, min_periods=1).mean().get_values()
+        limit_direction='both').rolling(5, min_periods=1).mean().values
     position = np.array([(positions_smooth[:, 0] + positions_smooth[:, 2]) / 2,
                          (positions_smooth[:, 1] + positions_smooth[:, 3]) / 2]).transpose()
 
