@@ -36,6 +36,7 @@ def get_opts(fp_hdf_out, train_test_times):
     opts['model_timesteps'] = 64  # How many timesteps are used in the input layer, e.g. a sampling rate of 30 will yield 2.13s windows. Has to be divisible X times by 2. X='num_convs_tsr'
     opts['num_convs_tsr'] = 4  # Number of downsampling steps within the model, e.g. with model_timesteps=64, it will downsample 64->32->16->8->4 and output 4 timesteps
     opts['average_output'] = 2**opts['num_convs_tsr']  # Whats the ratio between input and output shape
+    opts['channel_lower_limit'] = 2
 
     opts['optimizer'] = 'adam'  # Learning algorithm
     opts['learning_rate'] = 0.0007  # Learning rate
@@ -56,6 +57,9 @@ def get_opts(fp_hdf_out, train_test_times):
     opts['epochs'] = 20  # Number of epochs
     opts['shuffle'] = True  # If input should be shuffled
     opts['random_batches'] = True  # If random batches in time are used
+    opts['metrics'] = []
+    opts['last_layer_activation_function'] = 'linear'
+    opts['handle_nan'] = False
 
     # -------- MISC--------------- ------------
     opts['tensorboard_logfolder'] = './'  # Logfolder for tensorboard
