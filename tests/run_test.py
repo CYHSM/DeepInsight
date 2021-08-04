@@ -47,7 +47,7 @@ class TestDeepInsight(unittest.TestCase):
         # Get wavelets from hdf5 file
         input_wavelets = hdf5_file['inputs/wavelets']
         # Check statistics of wavelets
-        print('Mean {}, Std {}, Median {}, Max {}, Min {}'.format(np.mean(input_wavelets), np.std(input_wavelets), np.median(input_wavelets), np.max(input_wavelets), np.min(input_wavelets))
+        print('Mean {}, Std {}, Median {}, Max {}, Min {}'.format(np.mean(input_wavelets), np.std(input_wavelets), np.median(input_wavelets), np.max(input_wavelets), np.min(input_wavelets)))
         
         np.testing.assert_almost_equal(np.mean(input_wavelets), 0.048329726)
         np.testing.assert_almost_equal(np.std(input_wavelets), 0.032383125)
