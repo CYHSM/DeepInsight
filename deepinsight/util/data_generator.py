@@ -148,13 +148,6 @@ class RawWaveletSequence(Sequence):
         self.cv_indices = np.array(self.cv_indices)
             
         # 9.) Calculate normalization for wavelets
-        # Debug
-        print(self.fp_hdf_out)
-        print(os.path.dirname(self.fp_hdf_out))
-        print(os.path.basename(self.fp_hdf_out))
-        print(os.path.basename(self.fp_hdf_out)[:-3])
-        print(self.training_indices)
-        print(self.testing_indices)
         meanstd_path = os.path.dirname(self.fp_hdf_out) + '/models/tmp/' + os.path.basename(self.fp_hdf_out)[:-3] + '_meanstd_start{}_end{}_tstart{}_tend{}.p'.format(
             self.training_indices[0], self.training_indices[-1], self.testing_indices[0], self.testing_indices[-1])
         
