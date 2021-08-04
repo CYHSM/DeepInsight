@@ -26,7 +26,7 @@ class TestDeepInsight(unittest.TestCase):
         self.input_length = int(3e5)
         self.input_channels = 5
         self.sampling_rate = 30000
-        self.input_output_ratio = 100
+        self.input_output_ratio = 10
 
         self.rand_input = np.sin(np.random.rand(
             int(self.input_length), self.input_channels))

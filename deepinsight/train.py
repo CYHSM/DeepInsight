@@ -135,17 +135,7 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
     if user_opts is not None:
         for key, value in user_opts.items():
             tmp_opts[key] = value
-            
-    # Debug
-    print(tmp_wavelets.shape)
-    print(tmp_opts['model_timesteps'])
-    print(tmp_opts['batch_size'])
-    
-    
     exp_indices = np.arange(0, tmp_wavelets.shape[0] - (tmp_opts['model_timesteps'] * tmp_opts['batch_size']))
-    
-    print(exp_indices)
-    
     cv_splits = np.array_split(exp_indices, num_cvs)
     for cv_run, cvs in enumerate(cv_splits):
         K.clear_session()
@@ -153,11 +143,6 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
         training_indices = np.setdiff1d(exp_indices, cvs)  # All except the test indices
         testing_indices = cvs
         # opts -> generators -> model
-        print(exp_indices)
-        print(cvs)
-        print(training_indices)
-        print(testing_indices)
-        
         opts = util.opts.get_opts(path_in, train_test_times=(training_indices, testing_indices))
         opts['loss_functions'] = loss_functions.copy()
         opts['loss_weights'] = loss_weights
