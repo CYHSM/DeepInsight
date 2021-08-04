@@ -17,7 +17,7 @@ from . import architecture
 from . import util
 
 
-def train_model_on_generator(model, training_generator, testing_generator, loss_functions, loss_weights, steps_per_epoch=300, validation_steps=300,
+def train_model_on_generator(model, training_generator, testing_generator, loss_functions, loss_weights, steps_per_epoch=300, validation_steps=300, loss_metrics=[],
                              epochs=10, tensorboard_logfolder='./', model_name='', verbose=1, reduce_lr=False, log_output=False, save_model_only=False, compile_only=False):
     """
     Function for training a given model, with data provided by training and testing generators
@@ -68,10 +68,10 @@ def train_model_on_generator(model, training_generator, testing_generator, loss_
     for key, item in loss_functions.items():
         try:
             function_handle = getattr(util.custom_losses, item)
-        except AttributeError:
+        except (AttributeError, TypeError) as e:
             function_handle = item
         loss_functions[key] = function_handle
-    model.compile(loss=loss_functions, optimizer=opt, loss_weights=loss_weights)
+    model.compile(loss=loss_functions, optimizer=opt, loss_weights=loss_weights, metrics=loss_metrics)
     if compile_only:  # What a hack. Keras bug from Oct9 in saving/loading models.
         return model
     # Get model name for storing tmp files
@@ -103,7 +103,7 @@ def train_model_on_generator(model, training_generator, testing_generator, loss_
     return (model, history)
 
 
-def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts, num_cvs=5):
+def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts, num_cvs=5, verbose=0):
     """
     Trains the model across the experiment using cross validation and saves the model files
     TODO Save models back to HDF5 to keep everything in one place
@@ -131,7 +131,11 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
     hdf5_file = h5py.File(path_in, mode='r')
     tmp_wavelets = hdf5_file['inputs/wavelets']
     tmp_opts = util.opts.get_opts(path_in, train_test_times=(np.array([]), np.array([])))
-    exp_indices = np.arange(0, tmp_wavelets.shape[0] - tmp_opts['model_timesteps'])
+    # check for user options
+    if user_opts is not None:
+        for key, value in user_opts.items():
+            tmp_opts[key] = value
+    exp_indices = np.arange(0, tmp_wavelets.shape[0] - (tmp_opts['model_timesteps'] * tmp_opts['batch_size']))
     cv_splits = np.array_split(exp_indices, num_cvs)
     for cv_run, cvs in enumerate(cv_splits):
         K.clear_session()
@@ -154,10 +158,12 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
         print('------------------------------------------------')
         print('-> Model and generators loaded')
         print('------------------------------------------------')
+        if verbose > 0:
+            print(model.summary())
 
         (model, history) = train_model_on_generator(model, training_generator, testing_generator, loss_functions=loss_functions.copy(), loss_weights=loss_weights, reduce_lr=True,
                                                     log_output=opts['log_output'], tensorboard_logfolder=tensorboard_logfolder, model_name=model_tmp_path, save_model_only=opts['save_model'],
-                                                    steps_per_epoch=opts['steps_per_epoch'], validation_steps=opts['validation_steps'], epochs=opts['epochs'])
+                                                    steps_per_epoch=opts['steps_per_epoch'], validation_steps=opts['validation_steps'], epochs=opts['epochs'], loss_metrics=opts['metrics'])
         # Save model and history
         if history:
             opts['history'] = history.history
@@ -169,7 +175,7 @@ def train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss
     hdf5_file.close()
 
 
-def run_from_path(path_in, loss_functions, loss_weights, user_opts=None):
+def run_from_path(path_in, loss_functions, loss_weights, user_opts=None, **args):
     """
     Runs model training giving path to HDF5 file and loss dictionaries
 
@@ -200,7 +206,7 @@ def run_from_path(path_in, loss_functions, loss_weights, user_opts=None):
     print('------------------------------------------------')
     print('Starting standard model')
     print('------------------------------------------------')
-    train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts)
+    train_model(model_path, path_in, tensorboard_logfolder, model_tmp_path, loss_functions, loss_weights, user_opts, **args)
 
 
 def get_model_from_function(training_generator, show_summary=True):
