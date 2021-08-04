@@ -23,10 +23,10 @@ class TestDeepInsight(unittest.TestCase):
             os.remove(self.fp_deepinsight)
         else:
             os.makedirs(self.fp_deepinsight_folder)
-        self.input_length = int(3e5)
+        self.input_length = int(3e6)
         self.input_channels = 5
         self.sampling_rate = 30000
-        self.input_output_ratio = 10
+        self.input_output_ratio = 100
 
         self.rand_input = np.sin(np.random.rand(
             int(self.input_length), self.input_channels))
