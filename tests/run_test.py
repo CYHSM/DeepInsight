@@ -23,7 +23,7 @@ class TestDeepInsight(unittest.TestCase):
             os.remove(self.fp_deepinsight)
         else:
             os.makedirs(self.fp_deepinsight_folder)
-        self.input_length = int(3e6)
+        self.input_length = int(3e5)
         self.input_channels = 5
         self.sampling_rate = 30000
         self.input_output_ratio = 100
@@ -42,7 +42,7 @@ class TestDeepInsight(unittest.TestCase):
         """
         # Transform raw data to frequency domain
         deepinsight.preprocess.preprocess_input(
-            self.fp_deepinsight, self.rand_input, sampling_rate=self.sampling_rate)
+            self.fp_deepinsight, self.rand_input, sampling_rate=self.sampling_rate, average_window=10)
         hdf5_file = h5py.File(self.fp_deepinsight, mode='r')
         # Get wavelets from hdf5 file
         input_wavelets = hdf5_file['inputs/wavelets']
