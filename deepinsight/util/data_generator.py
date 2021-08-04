@@ -84,7 +84,7 @@ class RawWaveletSequence(Sequence):
             idx = self.cv_indices[idx]
         cut_range = np.arange(idx, idx + self.sample_size)
 
-        # 2.) Above takes consecutive batches, maybe this is not what we want, implement some random batching here
+        # 2.) Above takes consecutive batches, implement random batching here
         if self.random_batches:
             indices = np.random.choice(self.cv_indices, size=self.batch_size)
             cut_range = [np.arange(start_index, start_index + self.model_timesteps) for start_index in indices]
@@ -125,7 +125,7 @@ class RawWaveletSequence(Sequence):
             cut_data = np.reshape(cut_data, (cut_data.shape[0] * cut_data.shape[1], cut_data.shape[2]))
 
             # 2.) Reshape for model output
-            if cut_data.shape[0] is not self.batch_size:
+            if len(cut_data.shape) is not self.batch_size:
                 cut_data = np.reshape(cut_data, (self.batch_size, self.model_timesteps, cut_data.shape[1]))
 
             # 3.) Divide evenly and make sure last output is being decoded
@@ -143,17 +143,31 @@ class RawWaveletSequence(Sequence):
             self.cv_indices = self.training_indices
         else:
             self.cv_indices = self.testing_indices
-
+            
+        # Make sure random choice takes from array not list 500x speedup
+        self.cv_indices = np.array(self.cv_indices)
+            
         # 9.) Calculate normalization for wavelets
-        meanstd_path = os.path.dirname(self.fp_hdf_out) + '/models/tmp/' + '_meanstd_start{}_end{}_tstart{}_tend{}.p'.format(
+        meanstd_path = os.path.dirname(self.fp_hdf_out) + '/models/tmp/' + os.path.basename(self.fp_hdf_out)[:-3] + '_meanstd_start{}_end{}_tstart{}_tend{}.p'.format(
             self.training_indices[0], self.training_indices[-1], self.testing_indices[0], self.testing_indices[-1])
+        
         if os.path.exists(meanstd_path):
             (self.est_mean, self.est_std) = pickle.load(open(meanstd_path, 'rb'))
         else:
-            self.est_mean = np.median(self.wavelets[self.training_indices, :, :], axis=0)
-            self.est_std = np.median(abs(self.wavelets[self.training_indices, :, :] - self.est_mean), axis=0)
+            print('Calculating MAD normalization parameters')
+            if len(self.training_indices) > 1e5:
+                print('Downsampling wavelets for MAD calculation')
+                self.est_mean = np.median(self.wavelets[self.training_indices[::100], :, :], axis=0)
+                self.est_std = np.median(abs(self.wavelets[self.training_indices[::100], :, :] - self.est_mean), axis=0)                
+            else:
+                self.est_mean = np.median(self.wavelets[self.training_indices, :, :], axis=0)
+                self.est_std = np.median(abs(self.wavelets[self.training_indices, :, :] - self.est_mean), axis=0)
             pickle.dump((self.est_mean, self.est_std), open(meanstd_path, 'wb'))
 
+        # Make sure indices contain no NaN values
+        if self.handle_nan:
+            self.cv_indices = self.check_for_nan()
+            
         # 10.) Define output shape. Most robust way is to get a dummy input and take that shape as output shape
         (dummy_input, dummy_output) = self.__getitem__(0)
         # Corresponds to the output of this generator, aka input to model. Also remove batch shape,
@@ -168,3 +182,17 @@ class RawWaveletSequence(Sequence):
         for attr in self.important_attributes:
             name += attr + ':{},'.format(getattr(self, attr))
         return name[:-1]
+    
+    def check_for_nan(self):
+        new_cv_indices, len_before = [], len(self.cv_indices)
+        for idx, cv in enumerate(self.cv_indices):
+            if not idx % 100000:
+                print('{} / {}'.format(cv, self.cv_indices[-1]), end='\r')
+            cut_range = np.arange(cv, cv + self.sample_size)
+            cut_range = np.reshape(cut_range, (self.batch_size, cut_range.shape[0] // self.batch_size))
+            out_sample = self.get_output_sample(cut_range)
+            nan_in_out = any([any(np.isnan(x.flatten())) for x in out_sample[0]])
+            if not nan_in_out:
+                new_cv_indices.append(cv)
+        print('Len before {}, after {} --- Diff {}'.format(len_before, len(new_cv_indices), len_before - len(new_cv_indices)))
+        return np.array(new_cv_indices)
