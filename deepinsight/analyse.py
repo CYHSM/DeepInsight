@@ -9,14 +9,14 @@ import h5py
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
-from tensorflow.compat.v1.keras import backend as K
+from tensorflow.compat.v1.keras.backend import clear_session, placeholder, get_session
 import os
 
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
 
-def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
+def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1, fp_test=None, timestep=-1):
     """
     Loops across cross validated models and calculates loss and predictions for full experiment length
 
@@ -40,7 +40,10 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
         Indices which were evaluated, important when taking stepsize unequal to 1
     """
     dirname = os.path.dirname(fp_hdf_out)
-    filename = os.path.basename(fp_hdf_out)[0:-3]
+    if fp_test is None:
+        filename = os.path.basename(fp_hdf_out)[0:-3]
+    else:
+        filename = os.path.basename(fp_test)[0:-3]
     cv_results = []
     (_, _, _, opts) = util.hdf5.load_model_with_opts(
         dirname + '/models/' + filename + '_model_{}.h5'.format(0))
@@ -50,23 +53,32 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
         progress_bar = tf.keras.utils.Progbar(
             opts['num_cvs'], width=30, verbose=1, interval=0.05, unit_name='run')
     for k in range(0, opts['num_cvs']):
-        K.clear_session()
+        clear_session()
         # Find folders
         model_path = dirname + '/models/' + filename + '_model_{}.h5'.format(k)
         # Load model and generators
-        (model, training_generator, testing_generator,
-         opts) = util.hdf5.load_model_with_opts(model_path)
+        (model, training_generator, testing_generator, opts) = util.hdf5.load_model_with_opts(model_path)
+        if fp_test is not None:
+            opts['fp_hdf_out'] = fp_hdf_out
+            opts['handle_nan'] = False
+            hdf5_file = h5py.File(fp_hdf_out, mode='r')
+            wavelets = hdf5_file['inputs/wavelets'][()]
+            hdf5_file.close()
+            opts['training_indices'] = np.arange(0,wavelets.shape[0] - (opts['model_timesteps'] * opts['batch_size']))
+            opts['testing_indices'] = np.arange(0,wavelets.shape[0] - (opts['model_timesteps'] * opts['batch_size'])) 
+            (training_generator, testing_generator) = util.data_generator.create_train_and_test_generators(opts) 
+            #testing_generator.cv_indices = np.arange(0, testing_generator.wavelets.shape[0] - (opts['model_timesteps'] * opts['batch_size']))
         # -----------------------------------------------------------------------------------------------
         if shuffles is not None:
             testing_generator = shuffle_wavelets(
                 training_generator, testing_generator, shuffles)
         losses, predictions, indices = calculate_losses_from_generator(
-            testing_generator, model, verbose=0, stepsize=stepsize)
+            testing_generator, model, verbose=verbose-1, stepsize=stepsize)
         # -----------------------------------------------------------------------------------------------
         cv_results.append((losses, predictions, indices))
         if verbose > 0:
             progress_bar.add(1)
-    cv_results = np.array(cv_results)
+    cv_results = np.array(cv_results, dtype='object')
     # Reshape cv_results
     losses = np.concatenate(cv_results[:, 0], axis=0)
     predictions = {k: [] for k in loss_names}
@@ -74,23 +86,14 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
         for p, name in zip(out, loss_names):
             predictions[name].append(p)
     for key, item in predictions.items():
-        if stepsize > 1:
-            tmp_output = np.concatenate(predictions[key], axis=0)[:, -1, :]
-        else:
-            tmp_output = np.concatenate(predictions[key], axis=0)[:, -1, :]
-            tmp_output = np.array([np.pad(l, [time_shift, 0], mode='constant', constant_values=[l[0], 0])
-                                   for l in tmp_output.transpose()]).transpose()
+        tmp_output = np.concatenate(predictions[key], axis=0)[:, timestep, :]
         predictions[key] = tmp_output
     indices = np.concatenate(cv_results[:, 2], axis=0)
     # We only take the last timestep for decoding, so decoder does not see any part of the future
-    indices = indices + time_shift
-    if stepsize > 1:
-        losses = losses[:, :, -1]
-    else:
-        losses = losses[:, :, -1]
-        losses = np.array([np.pad(l, [time_shift, 0], mode='constant', constant_values=[l[0], 0])
-                           for l in losses.transpose()]).transpose()
-        indices = np.arange(0, losses.shape[0])
+    # We also need to shift the indices as we decode samples within the time window
+    time_shifts = np.arange(0, testing_generator.model_timesteps + 1, testing_generator.average_output)[1::] - 1
+    indices = indices + time_shifts[timestep]
+        
     # Also save to HDF5
     hdf5_file = h5py.File(fp_hdf_out, mode='a')
     for key, item in predictions.items():
@@ -100,14 +103,20 @@ def get_model_loss(fp_hdf_out, stepsize=1, shuffles=None, axis=0, verbose=1):
                                dataset_shape=losses.shape, dataset_type=np.float32, dataset_value=losses)
     util.hdf5.create_or_update(hdf5_file, dataset_name="analysis/indices_axis{}_stepsize{}".format(axis, stepsize),
                                dataset_shape=indices.shape, dataset_type=np.int64, dataset_value=indices)
+    
+    # Add real to output of this function      
+    output_real = dict()
+    for idx, (key, y_pred) in enumerate(predictions.items()):
+        output_real[key] = np.array(hdf5_file['outputs/{}'.format(key)])[indices, ...]
+    
     hdf5_file.close()
 
     # Report model performance
     if verbose > 0:
-        df_stats = calculate_model_stats(fp_hdf_out, losses, predictions, indices)
+        df_stats = calculate_model_stats(losses, predictions, indices, output_real)
         print(df_stats)
 
-    return losses, predictions, indices
+    return losses, predictions, indices, output_real
 
 
 def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
@@ -141,11 +150,9 @@ def get_shuffled_model_loss(fp_hdf_out, stepsize=1, axis=0, verbose=1):
             tmp_wavelets_shape[axis], width=30, verbose=1, interval=0.05, unit_name='run')
     for s in range(0, tmp_wavelets_shape[axis]):
         if axis == 1:
-            losses, _, _ = get_model_loss(
-                fp_hdf_out, stepsize=stepsize, shuffles={'f': s}, axis=axis, verbose=0)
+            losses = get_model_loss(fp_hdf_out, stepsize=stepsize, shuffles={'f': s}, axis=axis, verbose=0)[0]
         elif axis == 2:
-            losses, _, _ = get_model_loss(
-                fp_hdf_out, stepsize=stepsize, shuffles={'c': s}, axis=axis, verbose=0)
+            losses = get_model_loss(fp_hdf_out, stepsize=stepsize, shuffles={'c': s}, axis=axis, verbose=0)[0]
         shuffled_losses.append(losses)
         if verbose > 0:
             progress_bar.add(1)
@@ -200,9 +207,9 @@ def calculate_losses_from_generator(tg, model, num_steps=None, stepsize=1, verbo
         tg.sample_size = tg.model_timesteps * tg.batch_size
 
     # 2.) Get output tensors
-    sess = K.get_session()
+    sess = get_session()
     (_, test_out) = tg.__getitem__(0)
-    real_tensor, calc_tensors = K.placeholder(), []
+    real_tensor, calc_tensors = placeholder(), []
     for output_index in range(0, len(test_out)):
         prediction_tensor = model.outputs[output_index]
         loss_tensor = model.loss_functions[output_index].fn(
@@ -270,7 +277,7 @@ def swap_listaxes(list_in):
     return list_out
 
 
-def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_metrics=[spearmanr]):
+def calculate_model_stats(losses, predictions, indices, real, additional_metrics=[spearmanr]):
     """
     Calculates statistics on model predictions
 
@@ -292,11 +299,8 @@ def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_m
     df_scores
         Dataframe of evaluated scores
     """
-    hdf5_file = h5py.File(fp_hdf_out, mode='r')
     output_scores = []
-    for idx, (key, y_pred) in enumerate(predictions.items()):
-        y_true = hdf5_file['outputs/{}'.format(key)][indices, :]
-
+    for idx, ((key, y_pred), (key2, y_true)) in enumerate(zip(predictions.items(), real.items())):
         pearson_mean, additional_mean = 0, np.zeros((len(additional_metrics)))
         for p in range(y_pred.shape[1]):
             pearson_mean += np.corrcoef(y_true[:, p], y_pred[:, p])[0, 1]
@@ -311,6 +315,5 @@ def calculate_model_stats(fp_hdf_out, losses, predictions, indices, additional_m
         output_scores.append((pearson_mean, loss_mean, *additional_mean))
     additional_columns = [f.__name__.title() for f in additional_metrics]
     df_scores = pd.DataFrame(output_scores, index=predictions.keys(), columns=['Pearson', 'Model Loss', *additional_columns])
-    hdf5_file.close()
 
     return df_scores
