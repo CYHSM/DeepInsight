@@ -152,7 +152,7 @@ def preprocess_chunk(raw_chunk, subtract_mean=True, convert_to_milivolt=False):
     return raw_chunk
 
 
-def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, average_window=1000, dataset_name='aligned'):
+def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, average_window=1000, dataset_name='aligned', dataset_type=np.float16):
     """
     Base file for preprocessing outputs (handles M-D case as of March2020).
     For more complex cases use specialized functions (see for example preprocess_output in util.tetrode module)
@@ -187,7 +187,7 @@ def preprocess_output(fp_hdf_out, raw_timestamps, output, output_timestamps, ave
 
     # Create and save datasets in HDF5 File
     hdf5.create_or_update(hdf5_file, dataset_name="outputs/{}".format(dataset_name),
-                          dataset_shape=[input_length, output_aligned.shape[1]], dataset_type=np.float16, dataset_value=output_aligned[0: input_length, ...])
+                          dataset_shape=[input_length, output_aligned.shape[1]], dataset_type=dataset_type, dataset_value=output_aligned[0: input_length, ...])
     hdf5_file.flush()
     hdf5_file.close()
     print('Successfully written Dataset="{}" to {}'.format(dataset_name, fp_hdf_out))
