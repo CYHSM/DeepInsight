@@ -1,4 +1,4 @@
-tensorflow-gpu==2.1.0
+tensorflow-gpu==2.4.2
 numpy==1.18.1
 pandas==1.0.1
 joblib==0.14.1
