@@ -39,7 +39,7 @@ def the_decoder(tg, show_summary=True):
     x = Lambda(lambda x: K.permute_dimensions(x, (0, 2, 3, 1, 4)))(x)
 
     layer_counter = 0
-    while (K.int_shape(x)[3] > 2):
+    while (K.int_shape(x)[3] > tg.channel_lower_limit):
         x = TimeDistributed(Conv2D(filters=tg.filter_size * 2, kernel_size=(1, 2), strides=(1, 2),
                                    padding=tg.conv_padding, activation=tg.act_conv, name='conv_after_tsr{}'.format(layer_counter)))(x)
         layer_counter += 1
@@ -53,7 +53,7 @@ def the_decoder(tg, show_summary=True):
         for d in range(0, tg.num_dense):
             x = Dense(tg.num_units_dense, activation=tg.act_fc, name='dense{}_combine{}'.format(d, key))(x)
             x = Dropout(tg.dropout_ratio)(x)
-        out = Dense(output.shape[1], name='{}'.format(key), activation='linear')(x)
+        out = Dense(output.shape[1], name='{}'.format(key), activation=tg.last_layer_activation_function)(x)
         outputs.append(out)
 
     model = Model(inputs=model_input, outputs=outputs)
