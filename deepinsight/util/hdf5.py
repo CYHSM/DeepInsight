@@ -30,6 +30,9 @@ def create_or_update(hdf5_file, dataset_name, dataset_shape, dataset_type, datas
         hdf5_file.create_dataset(dataset_name, dataset_shape, dataset_type)
         hdf5_file[dataset_name][:] = dataset_value
     else:
+        if hdf5_file[dataset_name].shape != dataset_shape:
+            del hdf5_file[dataset_name]
+            hdf5_file.create_dataset(dataset_name, dataset_shape, dataset_type)
         hdf5_file[dataset_name][:] = dataset_value
     hdf5_file.flush()
 
@@ -77,9 +80,10 @@ def load_model_with_opts(file_name):
         Dictionary used for training the model
     """
     from .. import train
-    # Get options from dictionary, stored as str in HDF5 (not recommended)
+    # Get options from dictionary, stored as str in HDF5 (not recommended, TODO)
     hdf5_file = h5py.File(file_name, mode='r')
     opts = eval(hdf5_file['opts'][()])
+    opts['handle_nan'] = False
     hdf5_file.close()
 
     # Use options to create data generators and model weights
