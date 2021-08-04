@@ -12,7 +12,7 @@ import seaborn as sns
 sns.set_style('white')
 
 
-def plot_residuals(fp_hdf_out, output_names, aggregator=np.mean, frequency_spacing=1):
+def plot_residuals(fp_hdf_out, output_names, losses=None, shuffled_losses=None, aggregator=np.mean, frequency_spacing=1, offset=0):
     """
     Plots influence plots for each output
 
@@ -27,16 +27,18 @@ def plot_residuals(fp_hdf_out, output_names, aggregator=np.mean, frequency_spaci
     """
     # Read data from HDF5 file
     hdf5_file = h5py.File(fp_hdf_out, mode='r')
-    losses = hdf5_file["analysis/losses"][()]
-    shuffled_losses = hdf5_file["analysis/influence/shuffled_losses"][()]
+    if losses is None:
+        losses = hdf5_file["analysis/losses"][()]
+    if shuffled_losses is None:
+        shuffled_losses = hdf5_file["analysis/influence/shuffled_losses"][()]
     frequencies = hdf5_file["inputs/fourier_frequencies"][()].astype(np.float32)
     hdf5_file.close()
 
-    # Calculate residuals, make sure there is no division by zero by adding small constant. TODO Should be relative to loss
-    residuals = (shuffled_losses - losses) / (losses + 0.1)
+    # Calculate residuals, make sure there is no division by zero by adding small constant. TODO Should be relative to loss and only if needed
+    residuals = (shuffled_losses - losses) / (losses + offset)
 
     # Plot
-    fig, axes = plt.subplots(1, len(output_names), figsize=(16, 5))
+    fig, axes = plt.subplots(len(output_names), 1, figsize=(16, 8))
     if len(output_names) > 1:
         axes = axes.flatten()
     else:
