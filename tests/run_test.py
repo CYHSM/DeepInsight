@@ -27,6 +27,7 @@ class TestDeepInsight(unittest.TestCase):
         self.input_channels = 5
         self.sampling_rate = 30000
         self.input_output_ratio = 100
+        self.average_window = 10
 
         self.rand_input = np.sin(np.random.rand(
             int(self.input_length), self.input_channels))
@@ -42,21 +43,21 @@ class TestDeepInsight(unittest.TestCase):
         """
         # Transform raw data to frequency domain
         deepinsight.preprocess.preprocess_input(
-            self.fp_deepinsight, self.rand_input, sampling_rate=self.sampling_rate, average_window=10)
+            self.fp_deepinsight, self.rand_input, sampling_rate=self.sampling_rate, average_window=self.average_window)
         hdf5_file = h5py.File(self.fp_deepinsight, mode='r')
         # Get wavelets from hdf5 file
         input_wavelets = hdf5_file['inputs/wavelets']
         # Check statistics of wavelets
-        #np.testing.assert_almost_equal(np.mean(input_wavelets), 0.048329710)
-        #np.testing.assert_almost_equal(np.std(input_wavelets), 0.04667989)
-        #np.testing.assert_almost_equal(np.median(input_wavelets), 0.03440293)
-        #np.testing.assert_almost_equal(np.max(input_wavelets), 0.60365933)
-        #np.testing.assert_almost_equal(np.min(input_wavelets), 3.78198024e-08)
+        np.testing.assert_almost_equal(np.mean(input_wavelets), 0.048329710)
+        np.testing.assert_almost_equal(np.std(input_wavelets), 0.04667989)
+        np.testing.assert_almost_equal(np.median(input_wavelets), 0.03440293)
+        np.testing.assert_almost_equal(np.max(input_wavelets), 0.60365933)
+        np.testing.assert_almost_equal(np.min(input_wavelets), 3.78198024e-08)
         hdf5_file.close()
 
         # Prepare outputs
         deepinsight.preprocess.preprocess_output(
-            self.fp_deepinsight, self.rand_input_timesteps, self.rand_output, self.rand_timesteps)
+            self.fp_deepinsight, self.rand_input_timesteps, self.rand_output, self.rand_timesteps, average_window=self.average_window)
 
         # Define loss functions and train model
         loss_functions = {'aligned': 'mse'}
