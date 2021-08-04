@@ -69,7 +69,7 @@ class TestDeepInsight(unittest.TestCase):
             self.fp_deepinsight, loss_functions, loss_weights, user_opts)
 
         # Get loss and shuffled loss for influence plot, both is also stored back to HDF5 file
-        losses, output_predictions, indices = deepinsight.analyse.get_model_loss(
+        losses, output_predictions, indices, output_real = deepinsight.analyse.get_model_loss(
             self.fp_deepinsight, stepsize=10)
 
         shuffled_losses = deepinsight.analyse.get_shuffled_model_loss(
