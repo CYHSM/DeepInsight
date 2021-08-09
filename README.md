@@ -54,6 +54,13 @@ Install DeepInsight with the following command (Installation time ~ 2 minutes, d
 ```
 pip install -e git+https://github.com/CYHSM/DeepInsight.git#egg=DeepInsight
 ```
+If you already have a conda environment with packages preinstalled you can just download the repository and load the module via:
+```python
+import sys
+sys.path.insert(0, "{}/DeepInsight".format(your_path))
+import deepinsight
+```
+
 If you prefer to use DeepInsight from within your browser, we provide Colab-Notebooks to guide you through how to use DeepInsight with your own data. 
 
 - How to use DeepInsight with two-photon calcium imaging data [![Two-Photon Imaging](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11RXK7JIgVM8Zy9M7xEtt1k62i3JXbZLU)
