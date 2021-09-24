@@ -4,7 +4,7 @@ DeepInsight Toolbox
 https://github.com/CYHSM/DeepInsight
 Licensed under MIT License
 """
-from setuptools import setup
+from setuptools import setup, find_packages
 
 long_description = open('README.md').read()
 with open('requirements.txt') as f:
@@ -29,4 +29,8 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
     ],
+    packages=find_packages(),
+    package_data={
+        "": ["*.p", "*.h5", "*.csv", "*.gif", "*.png", "*.txt"],
+    },
 )
